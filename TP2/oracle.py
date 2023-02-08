@@ -4,12 +4,14 @@ from qiskit_aer import QasmSimulator
 from qiskit.visualization import plot_histogram
 
 # Use Aer's qasm_simulator
+target = '01101'
 simulator = QasmSimulator()
 # Create quantum program that find 01101 by reversing its phase
-x = QuantumRegister(5, name='X')  # 5 qubits index 0 is the right most qubit
+x = QuantumRegister(len(target), name='X')  # 5 qubits index 0 is the right most qubit
 y = QuantumRegister(1, name='Y')
 ands_results = QuantumRegister(9, name='ands_results')
 res = ClassicalRegister(1, name='res')
+
 oracle = QuantumCircuit(x, y, ands_results, res, name='oracle')
 
 oracle.x(y, 'init y with |1>')
@@ -18,19 +20,14 @@ oracle.h(x)
 oracle.h(y)
 
 # Ensure each bit is correct in ands_results
-oracle.cx(x[0], ands_results[0])  # ands_results[0] will be at |1> if x[0] is at |1>
-
-oracle.x(x[1], 'set to |1> for future CX gate')
-oracle.cx(x[1], ands_results[1])  # ands_results[1] will be at |1> if x[1] is at |0>
-oracle.x(x[1], 'undo')  # Reset x[1]
-
-oracle.cx(x[2], ands_results[2])  # ands_results[2] will be at |1> if x[2] is at |1>
-
-oracle.cx(x[3], ands_results[3])  # ands_results[3] will be at |1> if x[3] is at |1>
-
-oracle.x(x[4], 'set to |1> for future CX gate')
-oracle.cx(x[4], ands_results[4])  # ands_results[4] will be at |1> if x[1] is at |0>
-oracle.x(x[4], 'undo')  # Reset x[4]
+for i in range(len(target)):
+    correct_index = len(target) - i - 1
+    if target[i] == '0':
+        oracle.x(x[correct_index], 'set to |1> for future CX gate')
+        oracle.cx(x[correct_index], ands_results[correct_index])
+        oracle.x(x[correct_index], 'undo')  # Reset x[i]
+    else:
+        oracle.cx(x[correct_index], ands_results[correct_index])
 
 # ands_results from 0 to 4 are all to |1> if x is 01101
 # We now have to apply ANDS gates to ands_results
