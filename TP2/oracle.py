@@ -2,9 +2,10 @@ import numpy as np
 from qiskit import QuantumCircuit, transpile, QuantumRegister, ClassicalRegister
 from qiskit_aer import QasmSimulator
 from qiskit.visualization import plot_histogram
+import qiskit.quantum_info as qi
 
-# Use Aer's qasm_simulator
 target = '01101'
+# Use Aer's qasm_simulator
 simulator = QasmSimulator()
 # Create quantum program that find 01101 by reversing its phase
 x = QuantumRegister(len(target), name='X')  # 5 qubits index 0 is the right most qubit
