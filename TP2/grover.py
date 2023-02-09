@@ -11,7 +11,7 @@ A = [[1 / (2 ** len(target)) for i in range(2 ** len(target))] for j in range(2 
 # Convert to NumPy matrix
 np_a = np.array(A)
 I = np.identity(2 ** len(target))
-matrix = I - 2 * np_a
+matrix = -I + 2 * np_a
 
 # Use Aer's qasm_simulator
 simulator = QasmSimulator()
@@ -19,17 +19,16 @@ simulator = QasmSimulator()
 x = QuantumRegister(len(target), name='X')  # 5 qubits index 0 is the right most qubit
 y = QuantumRegister(1, name='Y')
 ands_results = QuantumRegister(9, name='ands_results')
-res = ClassicalRegister(len(target), name='res')
+res = ClassicalRegister(len(target), name='Target')
 
 oracle = QuantumCircuit(x, y, ands_results, res, name='oracle')
 oracle.h(x)
-for j in range(int((2 ** len(target)) ** (1 / 2))+1):
-    oracle.reset(y)
-    oracle.x(y, 'reset y with |1>')
-    # Apply Hadamard gate to X and Y
+
+for j in range(int((2 ** len(target)) ** (1 / 2)) + 1):
+
+    oracle.x(y)
     oracle.h(y)
 
-    # Ensure each bit is correct in ands_results
     for i in range(len(target)):
         correct_index = len(target) - i - 1
         if target[i] == '0':
@@ -50,7 +49,7 @@ for j in range(int((2 ** len(target)) ** (1 / 2))+1):
     oracle.ccx(ands_results[7], ands_results[4], ands_results[8])  # ands_results[8] will be at |1> if x is 01101
 
     # ands_results[8] contains f(x) value
-    oracle.cx(ands_results[8],y)  # Apply CX gate to qubit ands_results[8], y in order to get f(x) output (classical
+    oracle.cx(ands_results[8], y)  # Apply CX gate to qubit ands_results[8], y in order to get f(x) output (classical
     # XOR)
 
     # Print the result
@@ -74,4 +73,4 @@ counts = result.get_counts(compiled_circuit)
 # Draw the circuit
 oracle.draw('mpl', filename='grover.png')
 
-plot_histogram(counts, filename='grover_hist.png', title='Grover Histogram', bar_labels=True,figsize=(10, 8))
+plot_histogram(counts, filename='grover_hist.png', title='Grover Histogram', bar_labels=True, figsize=(10, 8))
