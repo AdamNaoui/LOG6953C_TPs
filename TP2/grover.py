@@ -18,51 +18,58 @@ simulator = QasmSimulator()
 # Create quantum program that find 01101 by reversing its phase
 x = QuantumRegister(len(target), name='X')  # 5 qubits index 0 is the right most qubit
 y = QuantumRegister(1, name='Y')
-ands_results = QuantumRegister(9, name='ands_results')
+ands_results = QuantumRegister(len(target) - 1, name='ands_results')
 res = ClassicalRegister(len(target), name='Target')
 
-oracle = QuantumCircuit(x, y, ands_results, res, name='oracle')
-oracle.h(x)
+grover = QuantumCircuit(x, y, ands_results, res, name='grover')
+grover.h(x)
 
-for j in range(int((2 ** len(target)) ** (1 / 2)) + 1):
+for j in range(int((2 ** len(target)) ** (1 / 2))):
+    grover.reset(y)
+    grover.x(y, 'init y with |1>')
+    grover.h(y)
 
-    oracle.x(y)
-    oracle.h(y)
+    grover.reset(ands_results)
 
-    for i in range(len(target)):
+    for i in range(len(target) - 1):
         correct_index = len(target) - i - 1
-        if target[i] == '0':
-            oracle.x(x[correct_index], 'set to |1> for future CX gate')
-            oracle.cx(x[correct_index], ands_results[correct_index])
-            oracle.x(x[correct_index], 'undo')  # Reset x[i]
-        else:
-            oracle.cx(x[correct_index], ands_results[correct_index])
+        if i == 0:
+            if target[correct_index] == '0':
+                grover.x(x[i], 'correct bit is 0, set to |1> for future CCX gate')
+            if target[correct_index - 1] == '0':
+                grover.x(x[i + 1], 'correct bit is 0, set to |1> for future CCX gate')
 
-    # ands_results from 0 to 4 are all to |1> if x is 01101
-    # We now have to apply ANDS gates to ands_results
+            grover.ccx(x[i], x[i + 1], ands_results[i])
 
-    oracle.ccx(ands_results[0], ands_results[1], ands_results[5])
-    oracle.ccx(ands_results[2], ands_results[3], ands_results[6])
-    oracle.ccx(ands_results[5], ands_results[6],
-               ands_results[7])  # ands_results[7] will be at |1> if x is 01101 or 01101
+            if target[correct_index] == '0':
+                grover.x(x[i], 'undo setter')
+            if target[correct_index - 1] == '0':
+                grover.x(x[i + 1], 'undo setter')
 
-    oracle.ccx(ands_results[7], ands_results[4], ands_results[8])  # ands_results[8] will be at |1> if x is 01101
+            continue
 
-    # ands_results[8] contains f(x) value
-    oracle.cx(ands_results[8], y)  # Apply CX gate to qubit ands_results[8], y in order to get f(x) output (classical
-    # XOR)
+        if target[correct_index - 1] == '0':
+            grover.x(x[i + 1], 'correct bit is 0, set to |1> for future CCX gate')
 
-    # Print the result
+        grover.ccx(ands_results[i - 1], x[i + 1], ands_results[i])
+
+        if target[correct_index - 1] == '0':
+            grover.x(x[i + 1], 'undo setter')
+
+    # ands_results[len(target) - 2] contains f(x) value
+    # Apply CX gate to qubit ands_results[8], y in order to get f(x) output (classical XOR)
+    grover.cx(ands_results[len(target) - 2], y)
+
     inversion_about_mean = qi.Operator(matrix.tolist())
-    oracle.unitary(inversion_about_mean, x, label='Inversion about mean')
+    grover.unitary(inversion_about_mean, x, label='Inversion about mean')
 
 # Map the quantum measurement to the classical bits
-oracle.measure(x, res)
+grover.measure(x, res)
 
-compiled_circuit = transpile(oracle, simulator)
+compiled_circuit = transpile(grover, simulator)
 
 # Execute the circuit on the qasm simulator
-job = simulator.run(compiled_circuit, shots=10000)
+job = simulator.run(compiled_circuit, shots=100000)
 
 # Grab results from the job
 result = job.result()
@@ -71,6 +78,6 @@ result = job.result()
 counts = result.get_counts(compiled_circuit)
 
 # Draw the circuit
-oracle.draw('mpl', filename='grover.png')
+grover.draw('mpl', filename='grover.png')
 
 plot_histogram(counts, filename='grover_hist.png', title='Grover Histogram', bar_labels=True, figsize=(10, 8))
