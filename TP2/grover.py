@@ -19,15 +19,15 @@ matrix = -I + 2 * np_a
 simulator = QasmSimulator()
 # Create quantum program that find 01101 by reversing its phase
 x = QuantumRegister(len(target), name='x')  # 5 qubits index 0 is the right most qubit
-ands_results = QuantumRegister(len(target) - 1, name='ands_results')
+fx = QuantumRegister(1, name='ands_results')
 res = ClassicalRegister(len(target), name='Target')
 
-grover = QuantumCircuit(x, res,ands_results, name='grover')
+grover = QuantumCircuit(x, res, fx, name='grover')
 grover.h(x)
 
 for j in range(int((2 ** len(target)) ** (1 / 2))):
-    grover.append(curr_oracle,  x[:] + ands_results[:])
-    grover.x(ands_results)
+    grover.append(curr_oracle, x[:] + fx[:])
+    grover.x(fx)
     inversion_about_mean = qi.Operator(matrix.tolist())
     grover.unitary(inversion_about_mean, x, label='Inversion about mean')
 
@@ -37,7 +37,7 @@ grover.measure(x, res)
 compiled_circuit = transpile(grover, simulator)
 
 # Execute the circuit on the qasm simulator
-job = simulator.run(compiled_circuit, shots=100000)
+job = simulator.run(compiled_circuit, shots=20000)
 
 # Grab results from the job
 result = job.result()
