@@ -13,14 +13,14 @@ def oracle(target):
         if target[correct_index] == '0':
             oracle_circuit.x(x[i])
 
-    oracle_circuit.mct(x[:], fx[0])
+    oracle_circuit.mct(x[:], fx)
+
+    oracle_circuit.cz(fx, x[0])
 
     for i in range(len(target)):
         correct_index = len(target) - i - 1
         if target[correct_index] == '0':
             oracle_circuit.x(x[i])
-
-    oracle_circuit.cz(fx, x)
 
     oracle_circuit.to_gate()
 

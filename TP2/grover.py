@@ -24,10 +24,11 @@ res = ClassicalRegister(len(target), name='Target')
 
 grover = QuantumCircuit(x, res, fx, name='grover')
 grover.h(x)
-
+grover.barrier()
 for j in range(int((2 ** len(target)) ** (1 / 2))):
     grover.append(curr_oracle, x[:] + fx[:])
     grover.x(fx)
+    grover.barrier()
     inversion_about_mean = qi.Operator(matrix.tolist())
     grover.unitary(inversion_about_mean, x, label='Inversion about mean')
 
@@ -37,7 +38,7 @@ grover.measure(x, res)
 compiled_circuit = transpile(grover, simulator)
 
 # Execute the circuit on the qasm simulator
-job = simulator.run(compiled_circuit, shots=20000)
+job = simulator.run(compiled_circuit, shots=100000)
 
 # Grab results from the job
 result = job.result()
