@@ -4,9 +4,11 @@ from qiskit_aer import QasmSimulator
 from qiskit.visualization import plot_histogram
 import qiskit.quantum_info as qi
 from oracle import oracle
+from Z0 import Z0
 
 target = '01101'
 curr_oracle = oracle(target)
+z0 = Z0(target)
 
 # creating inversion about mean operator
 A = [[1 / (2 ** len(target)) for i in range(2 ** len(target))] for j in range(2 ** len(target))]
@@ -29,11 +31,16 @@ for j in range(int((2 ** len(target)) ** (1 / 2))):
     grover.reset(ancilla)
     grover.x(ancilla)
     grover.h(ancilla)  # init fx to |->
-
     grover.append(curr_oracle, x[:] + ancilla[:])
     grover.barrier()
-    inversion_about_mean = qi.Operator(matrix.tolist())
-    grover.unitary(inversion_about_mean, x, label='Inversion about mean')
+
+    grover.reset(ancilla)
+    grover.x(ancilla)
+    grover.h(ancilla)  # init fx to |->
+
+    grover.h(x)
+    grover.append(z0, x[:] + ancilla[:])
+    grover.h(x)
     grover.barrier()
 
 # Map the quantum measurement to the classical bits
