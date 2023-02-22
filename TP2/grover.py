@@ -19,18 +19,22 @@ matrix = -I + 2 * np_a
 simulator = QasmSimulator()
 # Create quantum program that find 01101 by reversing its phase
 x = QuantumRegister(len(target), name='x')  # 5 qubits index 0 is the right most qubit
-fx = QuantumRegister(1, name='ands_results')
+ancilla = QuantumRegister(1, name='fx')
 res = ClassicalRegister(len(target), name='Target')
 
-grover = QuantumCircuit(x, res, fx, name='grover')
+grover = QuantumCircuit(x, res, ancilla, name='grover')
 grover.h(x)
 grover.barrier()
 for j in range(int((2 ** len(target)) ** (1 / 2))):
-    grover.append(curr_oracle, x[:] + fx[:])
-    grover.x(fx)
+    grover.reset(ancilla)
+    grover.x(ancilla)
+    grover.h(ancilla)  # init fx to |->
+
+    grover.append(curr_oracle, x[:] + ancilla[:])
     grover.barrier()
     inversion_about_mean = qi.Operator(matrix.tolist())
     grover.unitary(inversion_about_mean, x, label='Inversion about mean')
+    grover.barrier()
 
 # Map the quantum measurement to the classical bits
 grover.measure(x, res)
