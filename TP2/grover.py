@@ -27,7 +27,7 @@ res = ClassicalRegister(len(target), name='Target')
 grover = QuantumCircuit(x, res, ancilla, name='grover')
 grover.h(x)
 grover.barrier()
-for j in range(int((2 ** len(target)) ** (1 / 2))):
+for j in range(int((2 ** len(target)) ** (1 / 2))-1):
     grover.reset(ancilla)
     grover.x(ancilla)
     grover.h(ancilla)  # init fx to |->
