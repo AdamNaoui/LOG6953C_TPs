@@ -16,13 +16,6 @@ backend = provider.backends.simulator_extended_stabilizer
 target = '01101'
 curr_oracle = oracle(target)
 
-# creating inversion about mean operator
-A = [[1 / (2 ** len(target)) for i in range(2 ** len(target))] for j in range(2 ** len(target))]
-# Convert to NumPy matrix
-np_a = np.array(A)
-I = np.identity(2 ** len(target))
-matrix = -I + 2 * np_a
-
 # Use Aer's qasm_simulator
 simulator = QasmSimulator()
 # Create quantum program that find 01101 by reversing its phase
